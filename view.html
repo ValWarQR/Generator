@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Mold Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+      background: #f4f4f4;
+    }
+    h1 { color: #333; }
+    .section {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .qr { margin-top: 1rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    table th, table td {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>QR Generator of Molds</h1>
+  <div id="content" class="section">Loading...</div>
+  <div class="qr" id="qr-code"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const contentDiv = document.getElementById("content");
+
+    if (!id) {
+      contentDiv.innerHTML = "<p style='color:red;'>Missing ?id= parameter in URL.</p>";
+    } else {
+      fetch("https://script.google.com/macros/s/AKfycbwqesTT-n0r9SE3OQYCpSLJxihPpGUikNrwqzn2AqReQreTzxPqGsQ8LWbXoDAkJV-4Yw/exec?id=" + encodeURIComponent(id))
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            contentDiv.innerHTML = "<p style='color:red;'>" + data.error + "</p>";
+            return;
+          }
+
+          let html = `
+            <p><strong>ID Molde:</strong> ${data.id}</p>
+            <p><strong>Tipo:</strong> ${data.type}</p>
+            <p><strong>Warehouse:</strong> ${data.warehouse}</p>
+            <p><strong>Ubicación CV:</strong> ${data.ubicacionCV}</p>
+            <p><strong>Box Spare Parts:</strong> ${data.boxSpareParts}</p>
+            <p><strong>Comentarios:</strong> ${data.comments}</p>
+            <h3>Versiones</h3>
+            <table>
+              <tr>
+                <th>Versión</th>
+                <th>Material</th>
+                <th>Artículo</th>
+                <th>Color</th>
+                <th>Peso</th>
+                <th>Última Revisión</th>
+              </tr>
+          `;
+
+          data.versions.forEach(v => {
+            html += `
+              <tr>
+                <td>${v.version}</td>
+                <td>${v.material}</td>
+                <td>${v.article}</td>
+                <td>${v.color}</td>
+                <td>${v.weight}</td>
+                <td>${v.lastRevision}</td>
+              </tr>
+            `;
+          });
+
+          html += `</table>`;
+          contentDiv.innerHTML = html;
+
+          // Generar QR
+          const fullUrl = window.location.href;
+          QRCode.toCanvas(document.getElementById("qr-code"), fullUrl, {
+            width: 200,
+          }, function (error) {
+            if (error) console.error(error);
+          });
+        })
+        .catch(err => {
+          contentDiv.innerHTML = "<p style='color:red;'>Error al cargar los datos.</p>";
+          console.error(err);
+        });
+    }
+  </script>
+</body>
+</html>
