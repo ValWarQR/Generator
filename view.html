@@ -45,7 +45,7 @@
     if (!id) {
       contentDiv.innerHTML = "<p style='color:red;'>Missing ?id= parameter in URL.</p>";
     } else {
-      fetch("https://script.google.com/macros/s/AKfycbwqesTT-n0r9SE3OQYCpSLJxihPpGUikNrwqzn2AqReQreTzxPqGsQ8LWbXoDAkJV-4Yw/exec?id=" + encodeURIComponent(id))
+      fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec?id=" + encodeURIComponent(id))
         .then(res => res.json())
         .then(data => {
           if (data.error) {
