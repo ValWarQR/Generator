@@ -29,6 +29,14 @@
       border: 1px solid #ccc;
       text-align: left;
     }
+    .highlight {
+      background-color: #ffcccc;
+    }
+    .current-label {
+      color: red;
+      font-weight: bold;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
@@ -40,6 +48,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
+    const versionActual = params.get("versionActual"); // Nuevo parámetro para versión actual
     const contentDiv = document.getElementById("content");
 
     if (!id) {
@@ -73,9 +82,15 @@
           `;
 
           data.versions.forEach(v => {
+            // Comprobar si la versión coincide con la versión actual para resaltarla
+            const isCurrent = versionActual && v.version === versionActual;
+
             html += `
-              <tr>
-                <td>${v.version}</td>
+              <tr class="${isCurrent ? 'highlight' : ''}">
+                <td>
+                  ${v.version}
+                  ${isCurrent ? '<span class="current-label">(Versión actual)</span>' : ''}
+                </td>
                 <td>${v.material}</td>
                 <td>${v.article}</td>
                 <td>${v.color}</td>
@@ -88,7 +103,7 @@
           html += `</table>`;
           contentDiv.innerHTML = html;
 
-          // Generar QR
+          // Generar QR con la URL completa actual (incluye versionActual y id)
           const fullUrl = window.location.href;
           QRCode.toCanvas(document.getElementById("qr-code"), fullUrl, {
             width: 200,
