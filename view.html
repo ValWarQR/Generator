@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -54,6 +54,19 @@
       cursor: pointer;
       margin-top: 0.5rem;
     }
+    .message {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
   </style>
 </head>
 <body>
@@ -61,14 +74,15 @@
 
   <div class="section">
     <div class="form-group">
-      <label for="versionInput">Versión Actual</label>
+      <label for="versionInput">Versión Actual (opcional)</label>
       <input type="text" id="versionInput" placeholder="Ej: V1.0" />
     </div>
     <div class="form-group">
-      <label for="revisionInput">Última Revisión</label>
+      <label for="revisionInput">Última Revisión (opcional)</label>
       <input type="text" id="revisionInput" placeholder="Ej: 2025-06-20" />
     </div>
     <button onclick="actualizarDatos()">Aceptar</button>
+    <div id="message" class="message" style="display: none;"></div>
   </div>
 
   <div id="content" class="section">Cargando...</div>
@@ -79,8 +93,14 @@
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     const contentDiv = document.getElementById("content");
+    const messageDiv = document.getElementById("message");
 
-    let currentVersion = "";
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = "message " + type;
+      messageDiv.style.display = "block";
+      setTimeout(() => { messageDiv.style.display = "none"; }, 4000);
+    }
 
     function cargarDatos(versionSeleccionada = "") {
       fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec?id=" + encodeURIComponent(id))
@@ -127,8 +147,9 @@
           html += `</table>`;
           contentDiv.innerHTML = html;
 
-          // Generar el QR
-          QRCode.toCanvas(document.getElementById("qr-code"), window.location.href, {
+          // Generar el QR solo con ?id
+          const cleanUrl = window.location.origin + window.location.pathname + "?id=" + encodeURIComponent(id);
+          QRCode.toCanvas(document.getElementById("qr-code"), cleanUrl, {
             width: 200,
           }, function (error) {
             if (error) console.error(error);
@@ -144,8 +165,9 @@
       const version = document.getElementById("versionInput").value.trim();
       const revision = document.getElementById("revisionInput").value.trim();
 
-      if (!version || !revision) {
-        alert("Por favor, rellena ambas casillas.");
+      // Si no hay datos, simplemente no se envía nada
+      if (!version && !revision) {
+        showMessage("No se ha ingresado ningún dato para actualizar.", "error");
         return;
       }
 
@@ -154,8 +176,8 @@
         body: JSON.stringify({
           action: "actualizarRevision",
           idMolde: id,
-          nuevaRevision: revision,
-          versionActual: version
+          nuevaRevision: revision || "", // puede estar vacío
+          versionActual: version || ""
         }),
         headers: {
           "Content-Type": "application/json"
@@ -164,14 +186,14 @@
       .then(res => res.json())
       .then(result => {
         if (result.success) {
-          alert("Datos actualizados.");
-          cargarDatos(version); // recargar con la versión marcada
+          showMessage("Datos actualizados correctamente.", "success");
+          cargarDatos(version); // recargar resaltando versión si fue ingresada
         } else {
-          alert("Error al actualizar: " + (result.error || "desconocido"));
+          showMessage("Error: " + (result.error || "desconocido"), "error");
         }
       })
       .catch(err => {
-        alert("Error de red al actualizar.");
+        showMessage("Error de red al actualizar.", "error");
         console.error(err);
       });
     }
