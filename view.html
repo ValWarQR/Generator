@@ -172,29 +172,33 @@
       }
 
       fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec", {
-        method: "POST",
-        body: JSON.stringify({
-          action: "actualizarRevision",
-          idMolde: id,
-          nuevaRevision: revision || "", // puede estar vacío
-          versionActual: version || ""
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          showMessage("Datos actualizados correctamente.", "success");
-          cargarDatos(version); // recargar resaltando versión si fue ingresada
-        } else {
-          showMessage("Error: " + (result.error || "desconocido"), "error");
-        }
-      })
-      .catch(err => {
-        showMessage("Error de red al actualizar.", "error");
-        console.error(err);
+  method: "POST",
+  body: JSON.stringify({
+    action: "actualizarRevision",
+    idMolde: id,
+    nuevaRevision: revision || "",
+    versionActual: version || ""
+  }),
+  headers: {
+    "Content-Type": "application/json"
+  }
+})
+.then(res => {
+  console.log("Respuesta completa:", res);
+  return res.json(); // Si falla aquí, no es JSON válido
+})
+.then(result => {
+  console.log("Resultado del servidor:", result);
+  if (result.success) {
+    showMessage("Datos actualizados correctamente.", "success");
+    cargarDatos(version); 
+  } else {
+    showMessage("Error: " + (result.error || "desconocido"), "error");
+  }
+})
+.catch(err => {
+  console.error("Error en fetch POST:", err);
+  showMessage("Error de red al actualizar.", "error");
       });
     }
 
