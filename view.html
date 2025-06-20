@@ -96,6 +96,7 @@
     const messageDiv = document.getElementById("message");
     const QR_CANVAS = document.getElementById("qr-code");
 
+    // ✅ Pon aquí tu URL del Apps Script desplegado
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjBT-qxIIJtJXLQY-64QbvxFH8BdIQ0hzCHPZZO9jkXOS-uyVx01MAyw11I93kjO0b6A/exec";
 
     function showMessage(text, type) {
@@ -106,7 +107,7 @@
     }
 
     function cargarDatos(versionSeleccionada = "") {
-      fetch(`${SCRIPT_URL}?id=${encodeURIComponent(id)}`)
+      fetch(`${SCRIPT_URL}?id=${encodeURIComponent(id)}&versionActual=${encodeURIComponent(versionSeleccionada)}`)
         .then(res => res.json())
         .then(data => {
           if (data.error) {
@@ -190,7 +191,7 @@
         }
       })
       .catch(err => {
-        console.error("Error de red al actualizar:", err);
+        console.error("Error al actualizar:", err);
         showMessage("Error de red al actualizar.", "error");
       });
     }
