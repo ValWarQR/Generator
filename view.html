@@ -32,28 +32,57 @@
     .highlight {
       background-color: #ffcccc;
     }
-    .current-label {
-      color: red;
-      font-weight: bold;
-      margin-left: 6px;
+    .form-group {
+      margin: 0.5rem 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
 <body>
   <h1>Warehouse Valencia</h1>
-  <div id="content" class="section">Loading...</div>
+
+  <div class="section">
+    <div class="form-group">
+      <label for="versionInput">Versión Actual</label>
+      <input type="text" id="versionInput" placeholder="Ej: V1.0" />
+    </div>
+    <div class="form-group">
+      <label for="revisionInput">Última Revisión</label>
+      <input type="text" id="revisionInput" placeholder="Ej: 2025-06-20" />
+    </div>
+    <button onclick="actualizarDatos()">Aceptar</button>
+  </div>
+
+  <div id="content" class="section">Cargando...</div>
   <div class="qr" id="qr-code"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
-    const versionActual = params.get("versionActual"); // Nuevo parámetro para versión actual
     const contentDiv = document.getElementById("content");
 
-    if (!id) {
-      contentDiv.innerHTML = "<p style='color:red;'>Missing ?id= parameter in URL.</p>";
-    } else {
+    let currentVersion = "";
+
+    function cargarDatos(versionSeleccionada = "") {
       fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec?id=" + encodeURIComponent(id))
         .then(res => res.json())
         .then(data => {
@@ -82,15 +111,10 @@
           `;
 
           data.versions.forEach(v => {
-            // Comprobar si la versión coincide con la versión actual para resaltarla
-            const isCurrent = versionActual && v.version === versionActual;
-
+            const isCurrent = versionSeleccionada && v.version === versionSeleccionada;
             html += `
               <tr class="${isCurrent ? 'highlight' : ''}">
-                <td>
-                  ${v.version}
-                  ${isCurrent ? '<span class="current-label">(Versión actual)</span>' : ''}
-                </td>
+                <td>${v.version}${isCurrent ? ' (Versión actual)' : ''}</td>
                 <td>${v.material}</td>
                 <td>${v.article}</td>
                 <td>${v.color}</td>
@@ -103,9 +127,8 @@
           html += `</table>`;
           contentDiv.innerHTML = html;
 
-          // Generar QR con la URL completa actual (incluye versionActual y id)
-          const fullUrl = window.location.href;
-          QRCode.toCanvas(document.getElementById("qr-code"), fullUrl, {
+          // Generar el QR
+          QRCode.toCanvas(document.getElementById("qr-code"), window.location.href, {
             width: 200,
           }, function (error) {
             if (error) console.error(error);
@@ -115,6 +138,48 @@
           contentDiv.innerHTML = "<p style='color:red;'>Error al cargar los datos.</p>";
           console.error(err);
         });
+    }
+
+    function actualizarDatos() {
+      const version = document.getElementById("versionInput").value.trim();
+      const revision = document.getElementById("revisionInput").value.trim();
+
+      if (!version || !revision) {
+        alert("Por favor, rellena ambas casillas.");
+        return;
+      }
+
+      fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "actualizarRevision",
+          idMolde: id,
+          nuevaRevision: revision,
+          versionActual: version
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert("Datos actualizados.");
+          cargarDatos(version); // recargar con la versión marcada
+        } else {
+          alert("Error al actualizar: " + (result.error || "desconocido"));
+        }
+      })
+      .catch(err => {
+        alert("Error de red al actualizar.");
+        console.error(err);
+      });
+    }
+
+    if (!id) {
+      contentDiv.innerHTML = "<p style='color:red;'>Falta el parámetro ?id= en la URL.</p>";
+    } else {
+      cargarDatos();
     }
   </script>
 </body>
