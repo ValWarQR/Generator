@@ -74,11 +74,11 @@
 
   <div class="section">
     <div class="form-group">
-      <label for="versionInput">Version Actual (opcional)</label>
+      <label for="versionInput">Versión Actual (opcional)</label>
       <input type="text" id="versionInput" placeholder="Ej: V1.0" />
     </div>
     <div class="form-group">
-      <label for="revisionInput">Ultima Revision (opcional)</label>
+      <label for="revisionInput">Última Revisión (opcional)</label>
       <input type="text" id="revisionInput" placeholder="Ej: 2025-06-20" />
     </div>
     <button onclick="actualizarDatos()">Aceptar</button>
@@ -86,7 +86,7 @@
   </div>
 
   <div id="content" class="section">Cargando...</div>
-  <div class="qr" id="qr-code"></div>
+  <div class="qr"><canvas id="qr-code"></canvas></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
@@ -94,6 +94,10 @@
     const id = params.get("id");
     const contentDiv = document.getElementById("content");
     const messageDiv = document.getElementById("message");
+    const QR_CANVAS = document.getElementById("qr-code");
+
+    // Cambia esta URL por tu script desplegado (¡muy importante!)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjBT-qxIIJtJXLQY-64QbvxFH8BdIQ0hzCHPZZO9jkXOS-uyVx01MAyw11I93kjO0b6A/exec";
 
     function showMessage(text, type) {
       messageDiv.textContent = text;
@@ -103,11 +107,11 @@
     }
 
     function cargarDatos(versionSeleccionada = "") {
-      fetch("https://script.google.com/macros/s/AKfycbyZzAnDjjywmWU3wBYndc-IhhLkYu_VTudqluLISYcttD_K5QIgh9rUpSZ8U-l3fCXEZw/exec?id=" + encodeURIComponent(id))
+      fetch(`${SCRIPT_URL}?id=${encodeURIComponent(id)}`)
         .then(res => res.json())
         .then(data => {
           if (data.error) {
-            contentDiv.innerHTML = "<p style='color:red;'>" + data.error + "</p>";
+            contentDiv.innerHTML = `<p style='color:red;'>${data.error}</p>`;
             return;
           }
 
@@ -147,17 +151,15 @@
           html += `</table>`;
           contentDiv.innerHTML = html;
 
-          // Generar el QR solo con ?id
-          const cleanUrl = window.location.origin + window.location.pathname + "?id=" + encodeURIComponent(id);
-          QRCode.toCanvas(document.getElementById("qr-code"), cleanUrl, {
-            width: 200,
-          }, function (error) {
-            if (error) console.error(error);
+          // Generar el QR (usar un <canvas> real)
+          const cleanUrl = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(id)}`;
+          QRCode.toCanvas(QR_CANVAS, cleanUrl, { width: 200 }, function (error) {
+            if (error) console.error("Error generando QR:", error);
           });
         })
         .catch(err => {
+          console.error("Error al cargar los datos:", err);
           contentDiv.innerHTML = "<p style='color:red;'>Error al cargar los datos.</p>";
-          console.error(err);
         });
     }
 
@@ -165,40 +167,33 @@
       const version = document.getElementById("versionInput").value.trim();
       const revision = document.getElementById("revisionInput").value.trim();
 
-      // Si no hay datos, simplemente no se envía nada
       if (!version && !revision) {
         showMessage("No se ha ingresado ningún dato para actualizar.", "error");
         return;
       }
 
-      fetch("https://script.google.com/macros/s/AKfycbwjBT-qxIIJtJXLQY-64QbvxFH8BdIQ0hzCHPZZO9jkXOS-uyVx01MAyw11I93kjO0b6A/exec", {
-  method: "POST",
-  body: JSON.stringify({
-    action: "actualizarRevision",
-    idMolde: id,
-    nuevaRevision: revision || "",
-    versionActual: version || ""
-  }),
-  headers: {
-    "Content-Type": "application/json"
-  }
-})
-.then(res => {
-  console.log("Respuesta completa:", res);
-  return res.json(); // Si falla aquí, no es JSON válido
-})
-.then(result => {
-  console.log("Resultado del servidor:", result);
-  if (result.success) {
-    showMessage("Datos actualizados correctamente.", "success");
-    cargarDatos(version); 
-  } else {
-    showMessage("Error: " + (result.error || "desconocido"), "error");
-  }
-})
-.catch(err => {
-  console.error("Error en fetch POST:", err);
-  showMessage("Error de red al actualizar.", "error");
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "actualizarRevision",
+          idMolde: id,
+          nuevaRevision: revision || "",
+          versionActual: version || ""
+        })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          showMessage("Datos actualizados correctamente.", "success");
+          cargarDatos(version);
+        } else {
+          showMessage("Error: " + (result.error || "desconocido"), "error");
+        }
+      })
+      .catch(err => {
+        console.error("Error de red al actualizar:", err);
+        showMessage("Error de red al actualizar.", "error");
       });
     }
 
