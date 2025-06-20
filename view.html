@@ -96,7 +96,6 @@
     const messageDiv = document.getElementById("message");
     const QR_CANVAS = document.getElementById("qr-code");
 
-    // Cambia esta URL por tu script desplegado (¡muy importante!)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjBT-qxIIJtJXLQY-64QbvxFH8BdIQ0hzCHPZZO9jkXOS-uyVx01MAyw11I93kjO0b6A/exec";
 
     function showMessage(text, type) {
@@ -151,7 +150,6 @@
           html += `</table>`;
           contentDiv.innerHTML = html;
 
-          // Generar el QR (usar un <canvas> real)
           const cleanUrl = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(id)}`;
           QRCode.toCanvas(QR_CANVAS, cleanUrl, { width: 200 }, function (error) {
             if (error) console.error("Error generando QR:", error);
